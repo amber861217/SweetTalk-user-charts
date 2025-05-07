@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>User Percentage Chart</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script>
+      google.charts.load('current', { packages: ['corechart'] });
+
+      function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
+
+      function drawChart(userData) {
+        const data = new google.visualization.DataTable();
+        data.addColumn('string', 'Date');
+        data.addColumn('number', 'Percentage');
+
+        userData.forEach(row => {
+          data.addRow([row.Date, parseFloat(row.Percentage)]);
+        });
+
+        const options = {
+          title: 'Percentage Over Time',
+          hAxis: { title: 'Date' },
+          vAxis: { title: 'Percentage' },
+          legend: 'none'
+        };
+
+        const chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+      }
+
+      async function fetchData(userId) {
+        const sheetId = '14rbVT-gGHLdYV3Sf_YjpRZ8YoZSTtXIIMrCYr7Arjb0'; // ⬅ 換成你的 Google Sheets ID
+        const sheetName = 'Summary';      // ⬅ 換成你的工作表名稱
+        const query = encodeURIComponent('SELECT A, B, C, D');
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=${sheetName}&tq=${query}`;
+
+        const response = await fetch(url);
+        const text = await response.text();
+        const json = JSON.parse(text.substr(47).slice(0, -2));
+
+        const rows = json.table.rows.map(r => ({
+          UserID: r.c[0]?.v,
+          Date: r.c[1]?.f || r.c[1]?.v,
+          TotalIntake: r.c[2]?.v,
+          Percentage: r.c[3]?.v
+        }));
+
+        const filteredData = rows.filter(r => r.UserID === userId);
+        if (filteredData.length === 0) {
+          document.getElementById('chart_div').innerHTML = `<p>No data found for ${userId}</p>`;
+        } else {
+          drawChart(filteredData);
+        }
+      }
+
+      google.charts.setOnLoadCallback(() => {
+        const userId = getQueryParam('userid');
+        if (userId) {
+          fetchData(userId);
+        } else {
+          document.getElementById('chart_div').innerHTML = '<p>No user ID provided in URL</p>';
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h2>User Percentage Chart</h2>
+    <div id="chart_div" style="width: 900px; height: 500px;"></div>
+  </body>
+</html>
