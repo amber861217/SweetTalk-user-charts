@@ -27,7 +27,7 @@
 
         userData.forEach(row => {
           const percentage = parseFloat(row.Percentage);
-          const color = percentage > 1 ? 'red' : 'blue';
+          const color = percentage > 1 ? '#FF7575' : '#81C0C0';
           const annotation = percentage.toFixed(2) + '%'; // 格式化為百分比標籤
           data.addRow([row.Date, percentage, color, annotation]);
         });
@@ -40,18 +40,23 @@
           },
           hAxis: { title: 'Date' },
           vAxis: { 
-            title: '含糖量百分比（%）', // 修改 Y 軸標籤
+            title: '含糖量百分比（%）',
             titleTextStyle: { fontSize: 14 }
           },
           legend: 'none',
-          width: 800, // 調整圖表寬度
+          width: 800,
           height: 500,
           annotations: {
             alwaysOutside: true,
             textStyle: {
-              fontSize: 14, // 調整標籤字體大小
-              color: '#000',
-              auraColor: 'none' // 移除標籤背景
+              fontSize: 14,
+              color: '#FFFFFF', // 資料標籤白色
+              auraColor: 'none' // 移除預設背景
+            },
+            boxStyle: {
+              stroke: 'none', // 移除邊框
+              rx: 3, // 輕微圓角
+              fill: (dataPoint) => dataPoint.style || '#81C0C0' // 底色與 bar 顏色一致
             }
           }
         };
