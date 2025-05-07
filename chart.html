@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <title>User Percentage Chart</title>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <style>
+      /* 使用 CSS 強制置中圖表標題 */
+      #chart_div {
+        text-align: center;
+      }
+    </style>
     <script>
       google.charts.load('current', { packages: ['corechart'] });
 
@@ -29,16 +35,21 @@
         const options = {
           title: '每日含糖量攝取百分比',
           titleTextStyle: {
-            align: 'center', // 修正為 'align'，確保標題置中
-            fontSize: 16
+            fontSize: 18,
+            bold: true
           },
           hAxis: { title: 'Date' },
-          vAxis: { title: 'Percentage' },
+          vAxis: { 
+            title: '含糖量百分比（%）', // 修改 Y 軸標籤
+            titleTextStyle: { fontSize: 14 }
+          },
           legend: 'none',
+          width: 800, // 調整圖表寬度
+          height: 500,
           annotations: {
             alwaysOutside: true,
             textStyle: {
-              fontSize: 12,
+              fontSize: 14, // 調整標籤字體大小
               color: '#000',
               auraColor: 'none' // 移除標籤背景
             }
