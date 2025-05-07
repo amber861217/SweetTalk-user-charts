@@ -16,16 +16,37 @@
         const data = new google.visualization.DataTable();
         data.addColumn('string', 'Date');
         data.addColumn('number', 'Percentage');
+        // 添加 style 欄位用於條件式顏色
+        data.addColumn({ type: 'string', role: 'style' });
 
         userData.forEach(row => {
-          data.addRow([row.Date, parseFloat(row.Percentage)]);
+          const percentage = parseFloat(row.Percentage);
+          // 如果 Percentage > 1，設置紅色，否則使用預設顏色
+          const color = percentage > 1 ? 'red' : null;
+          data.addRow([row.Date, percentage, color]);
         });
 
         const options = {
-          title: 'Percentage Over Time',
+          title: '每日含糖量攝取百分比',
+          titleTextStyle: {
+            alignment: 'center' // 標題置中
+          },
           hAxis: { title: 'Date' },
           vAxis: { title: 'Percentage' },
-          legend: 'none'
+          legend: 'none',
+          // 啟用資料標籤並格式化為百分比
+          dataLabels: {
+            enabled: true,
+            format: '#.##%' // 顯示為百分比
+          },
+          // 設定資料標籤樣式
+          annotations: {
+            textStyle: {
+              fontSize: 12,
+              color: '#000'
+            },
+            alwaysOutside: true // 標籤顯示在 bar 外部
+          }
         };
 
         const chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
@@ -34,7 +55,7 @@
 
       async function fetchData(userId) {
         const sheetId = '14rbVT-gGHLdYV3Sf_YjpRZ8YoZSTtXIIMrCYr7Arjb0'; // ⬅ 換成你的 Google Sheets ID
-        const sheetName = 'Summary';      // ⬅ 換成你的工作表名稱
+        const sheetName = 'Summary'; // ⬅ 換成你的工作表名稱
         const query = encodeURIComponent('SELECT A, B, C, D');
         const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=${sheetName}&tq=${query}`;
 
