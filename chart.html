@@ -16,36 +16,32 @@
         const data = new google.visualization.DataTable();
         data.addColumn('string', 'Date');
         data.addColumn('number', 'Percentage');
-        // 添加 style 欄位用於條件式顏色
-        data.addColumn({ type: 'string', role: 'style' });
+        data.addColumn({ type: 'string', role: 'style' }); // 條件式顏色
+        data.addColumn({ type: 'string', role: 'annotation' }); // 資料標籤
 
         userData.forEach(row => {
           const percentage = parseFloat(row.Percentage);
-          // 如果 Percentage > 1，設置紅色，否則使用預設顏色
-          const color = percentage > 1 ? 'red' : null;
-          data.addRow([row.Date, percentage, color]);
+          const color = percentage > 1 ? 'red' : 'blue';
+          const annotation = percentage.toFixed(2) + '%'; // 格式化為百分比標籤
+          data.addRow([row.Date, percentage, color, annotation]);
         });
 
         const options = {
           title: '每日含糖量攝取百分比',
           titleTextStyle: {
-            alignment: 'center' // 標題置中
+            align: 'center', // 修正為 'align'，確保標題置中
+            fontSize: 16
           },
           hAxis: { title: 'Date' },
           vAxis: { title: 'Percentage' },
           legend: 'none',
-          // 啟用資料標籤並格式化為百分比
-          dataLabels: {
-            enabled: true,
-            format: '#.##%' // 顯示為百分比
-          },
-          // 設定資料標籤樣式
           annotations: {
+            alwaysOutside: true,
             textStyle: {
               fontSize: 12,
-              color: '#000'
-            },
-            alwaysOutside: true // 標籤顯示在 bar 外部
+              color: '#000',
+              auraColor: 'none' // 移除標籤背景
+            }
           }
         };
 
