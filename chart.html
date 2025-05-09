@@ -2,11 +2,10 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>User Percentage Chart</title>
+    <title>User Sugar Intake Chart</title>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <style>
-      /* 使用 CSS 強制置中圖表標題 */
-      #chart_div {
+      #stacked_chart_div, #pie_chart_div {
         text-align: center;
       }
     </style>
@@ -18,46 +17,97 @@
         return urlParams.get(param);
       }
 
-      function drawChart(userData) {
-        const data = new google.visualization.DataTable();
-        data.addColumn('string', 'Date');
-        data.addColumn('number', 'Percentage');
-        data.addColumn({ type: 'string', role: 'style' }); // 條件式顏色
-        data.addColumn({ type: 'string', role: 'annotation' }); // 資料標籤
+      function drawCharts(userData) {
+        // 準備堆疊長條圖資料
+        const dates = [...new Set(userData.map(row => row.Date))].sort();
+        const categories = ['甜點', '鹹點', '飲料', '原型食物'];
+        const userDSIG = userData.length > 0 ? parseFloat(userData[0].UserDSIG) : 0;
 
-        userData.forEach(row => {
-          const percentage = parseFloat(row.Percentage);
-          const color = percentage > 1 ? 'red' : 'blue'; // 明確指定預設顏色
-          const annotation = percentage.toFixed(2); // 格式化為百分比標籤
-          data.addRow([row.Date, percentage, color, annotation]);
+        // 堆疊長條圖資料表
+        const stackedData = new google.visualization.DataTable();
+        stackedData.addColumn('string', 'Date');
+        categories.forEach(category => {
+          stackedData.addColumn('number', category);
         });
 
-        const options = {
-          title: '每日含糖量攝取百分比',
+        const sugarByDateCategory = dates.map(date => {
+          const row = [date];
+          categories.forEach(category => {
+            const sugarSum = userData
+              .filter(d => d.Date === date && d.Category === category)
+              .reduce((sum, d) => sum + parseFloat(d.Sugar), 0);
+            row.push(sugarSum);
+          });
+          return row;
+        });
+
+        stackedData.addRows(sugarByDateCategory);
+
+        // 堆疊長條圖選項
+        const stackedOptions = {
+          title: '每日含糖量攝取（按類別堆疊）',
           titleTextStyle: {
-            align: 'center', // 修正為 align 屬性
-            fontSize: 18
+            fontSize: 18,
+            bold: true
           },
           hAxis: { title: 'Date' },
-          vAxis: { title: 'Percentage' },
-          legend: 'none',
-          annotations: {
-            alwaysOutside: true,
-            textStyle: {
-              fontSize: 12,
-              color: '#000'
+          vAxis: { 
+            title: 'Sugar (grams)',
+            titleTextStyle: { fontSize: 14 },
+            viewWindow: { min: 0 },
+            // 添加 User DSIG 常數線
+            gridlines: { count: 5 },
+            baseline: userDSIG,
+            baselineColor: 'red',
+            annotations: {
+              textStyle: { color: 'red' }
             }
-          }
+          },
+          isStacked: true,
+          colors: ['#FF7575', '#81C0C0', '#FFD700', '#90EE90'], // 甜點、鹹點、飲料、原型食物
+          legend: { position: 'top' },
+          width: 800,
+          height: 500
         };
 
-        const chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
-        chart.draw(data, options);
+        // 繪製堆疊長條圖
+        const stackedChart = new google.visualization.ColumnChart(document.getElementById('stacked_chart_div'));
+        stackedChart.draw(stackedData, stackedOptions);
+
+        // 準備圓餅圖資料
+        const categoryCounts = categories.map(category => {
+          const sugarSum = userData
+            .filter(d => d.Category === category)
+            .reduce((sum, d) => sum + parseFloat(d.Sugar), 0);
+          return [category, sugarSum];
+        });
+
+        const pieData = new google.visualization.DataTable();
+        pieData.addColumn('string', 'Category');
+        pieData.addColumn('number', 'Sugar (grams)');
+        pieData.addRows(categoryCounts);
+
+        // 圓餅圖選項
+        const pieOptions = {
+          title: '含糖量按類別占比',
+          titleTextStyle: {
+            fontSize: 18,
+            bold: true
+          },
+          colors: ['#FF7575', '#81C0C0', '#FFD700', '#90EE90'],
+          width: 500,
+          height: 400
+        };
+
+        // 繪製圓餅圖
+        const pieChart = new google.visualization.PieChart(document.getElementById('pie_chart_div'));
+        pieChart.draw(pieData, pieOptions);
       }
 
       async function fetchData(userId) {
-        const sheetId = '14rbVT-gGHLdYV3Sf_YjpRZ8YoZSTtXIIMrCYr7Arjb0'; // ⬅ 換成你的 Google Sheets ID
-        const sheetName = 'Summary'; // ⬅ 換成你的工作表名稱
-        const query = encodeURIComponent('SELECT A, B, C, D');
+        const sheetId = '14rbVT-gGHLdYV3Sf_YjpRZ8YoZSTtXIIMrCYr7Arjb0';
+        const sheetName = 'Template'; // 更新為 Template
+        const query = encodeURIComponent('SELECT A, B, C, D, E, F, G, H, I');
         const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=${sheetName}&tq=${query}`;
 
         const response = await fetch(url);
@@ -67,15 +117,21 @@
         const rows = json.table.rows.map(r => ({
           UserID: r.c[0]?.v,
           Date: r.c[1]?.f || r.c[1]?.v,
-          TotalIntake: r.c[2]?.v,
-          Percentage: r.c[3]?.v
+          Time: r.c[2]?.v,
+          SnackName: r.c[3]?.v,
+          Category: r.c[4]?.v,
+          Size: r.c[5]?.v,
+          Sugar: r.c[6]?.v,
+          UploadMethod: r.c[7]?.v,
+          UserDSIG: r.c[8]?.v
         }));
 
         const filteredData = rows.filter(r => r.UserID === userId);
         if (filteredData.length === 0) {
-          document.getElementById('chart_div').innerHTML = `<p>No data found for ${userId}</p>`;
+          document.getElementById('stacked_chart_div').innerHTML = `<p>No data found for ${userId}</p>`;
+          document.getElementById('pie_chart_div').innerHTML = '';
         } else {
-          drawChart(filteredData);
+          drawCharts(filteredData);
         }
       }
 
@@ -84,13 +140,15 @@
         if (userId) {
           fetchData(userId);
         } else {
-          document.getElementById('chart_div').innerHTML = '<p>No user ID provided in URL</p>';
+          document.getElementById('stacked_chart_div').innerHTML = '<p>No user ID provided in URL</p>';
+          document.getElementById('pie_chart_div').innerHTML = '';
         }
       });
     </script>
   </head>
   <body>
-    <h2>User Percentage Chart</h2>
-    <div id="chart_div" style="width: 900px; height: 500px;"></div>
+    <h2>User Sugar Intake Chart</h2>
+    <div id="stacked_chart_div" style="width: 900px; height: 500px;"></div>
+    <div id="pie_chart_div" style="width: 500px; height: 400px; margin: 0 auto;"></div>
   </body>
 </html>
