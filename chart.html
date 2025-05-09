@@ -18,34 +18,38 @@
       }
 
       function drawCharts(userData) {
-        // 準備堆疊長條圖資料
+        // 準備多條長條圖資料
         const dates = [...new Set(userData.map(row => row.Date))].sort();
         const categories = ['甜點', '鹹點', '飲料', '原型食物'];
         const userDSIG = userData.length > 0 ? parseFloat(userData[0].UserDSIG) : 0;
 
-        // 堆疊長條圖資料表
-        const stackedData = new google.visualization.DataTable();
-        stackedData.addColumn('string', 'Date');
+        // 多條長條圖資料表
+        const chartData = new google.visualization.DataTable();
+        chartData.addColumn('string', 'Date');
         categories.forEach(category => {
-          stackedData.addColumn('number', category);
+          chartData.addColumn('number', category);
         });
+        chartData.addColumn({ type: 'number', role: 'annotation' }); // 總和註解
 
         const sugarByDateCategory = dates.map(date => {
           const row = [date];
+          let totalSugar = 0;
           categories.forEach(category => {
             const sugarSum = userData
               .filter(d => d.Date === date && d.Category === category)
-              .reduce((sum, d) => sum + parseFloat(d.Sugar), 0);
+              .reduce((sum, d) => sum + parseFloat(d.Sugar || 0), 0);
+            totalSugar += sugarSum;
             row.push(sugarSum);
           });
+          row.push(totalSugar); // 總和作為註解
           return row;
         });
 
-        stackedData.addRows(sugarByDateCategory);
+        chartData.addRows(sugarByDateCategory);
 
-        // 堆疊長條圖選項
-        const stackedOptions = {
-          title: '每日含糖量攝取（按類別堆疊）',
+        // 多條長條圖選項
+        const chartOptions = {
+          title: '每日含糖量攝取（按類別）',
           titleTextStyle: {
             fontSize: 18,
             bold: true
@@ -55,30 +59,28 @@
             title: 'Sugar (grams)',
             titleTextStyle: { fontSize: 14 },
             viewWindow: { min: 0 },
-            // 添加 User DSIG 常數線
-            gridlines: { count: 5 },
-            baseline: userDSIG,
+            baseline: userDSIG, // 設置 User DSIG 常數線
             baselineColor: 'red',
             annotations: {
-              textStyle: { color: 'red' }
+              textStyle: { color: 'red', fontSize: 12 }
             }
           },
-          isStacked: true,
           colors: ['#FF7575', '#81C0C0', '#FFD700', '#90EE90'], // 甜點、鹹點、飲料、原型食物
           legend: { position: 'top' },
           width: 800,
-          height: 500
+          height: 500,
+          isStacked: false // 移除堆疊
         };
 
-        // 繪製堆疊長條圖
-        const stackedChart = new google.visualization.ColumnChart(document.getElementById('stacked_chart_div'));
-        stackedChart.draw(stackedData, stackedOptions);
+        // 繪製多條長條圖
+        const chart = new google.visualization.ColumnChart(document.getElementById('stacked_chart_div'));
+        chart.draw(chartData, chartOptions);
 
         // 準備圓餅圖資料
         const categoryCounts = categories.map(category => {
           const sugarSum = userData
             .filter(d => d.Category === category)
-            .reduce((sum, d) => sum + parseFloat(d.Sugar), 0);
+            .reduce((sum, d) => sum + parseFloat(d.Sugar || 0), 0);
           return [category, sugarSum];
         });
 
@@ -106,7 +108,7 @@
 
       async function fetchData(userId) {
         const sheetId = '14rbVT-gGHLdYV3Sf_YjpRZ8YoZSTtXIIMrCYr7Arjb0';
-        const sheetName = 'Template'; // 更新為 Template
+        const sheetName = 'Template';
         const query = encodeURIComponent('SELECT A, B, C, D, E, F, G, H, I');
         const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=${sheetName}&tq=${query}`;
 
