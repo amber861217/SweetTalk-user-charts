@@ -50,13 +50,17 @@
           hAxis: { 
             title: 'Sugar (grams)',
             titleTextStyle: { fontSize: 14 },
-            viewWindow: { min: 0 }, // 確保從 0 開始
-            baseline: userDSIG, // 設置 User DSIG 線
-            baselineColor: 'red',
-            // 添加 User DSIG 註解
+            viewWindow: { min: 0, max: Math.max(userDSIG + 10, ...sugarByDate.map(d => d[1] + 10)) }, // 確保 X 軸範圍足夠
+            gridlines: {
+              count: -1, // 自動計算格線
+              color: '#ddd'
+            },
+            // 使用 ticks 模擬 User DSIG 紅色線和註解
             ticks: [
+              { v: 0, f: '0' },
               { v: userDSIG, f: '每日建議糖攝取上限 (' + userDSIG + 'g)' }
-            ]
+            ],
+            gridlineColor: (value) => value === userDSIG ? 'red' : '#ddd' // 設置 User DSIG 線為紅色
           },
           vAxis: { 
             title: 'Date',
