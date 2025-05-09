@@ -45,13 +45,15 @@
         chartData.addColumn('number', 'Sugar (grams)');
         chartData.addColumn({ type: 'string', role: 'style' }); // 條件式顏色
         chartData.addColumn({ type: 'string', role: 'annotation' }); // 總和註解
+        chartData.addColumn('number', 'User DSIG'); // 用於繪製虛線
+        chartData.addColumn({ type: 'string', role: 'style' }); // DSIG 線樣式
 
         const sugarByDate = dates.map(date => {
           const totalSugar = userData
             .filter(d => d.Date === date)
             .reduce((sum, d) => sum + parseFloat(d.Sugar || 0), 0);
           const color = totalSugar <= userDSIG ? '#2894FF' : '#FFA042';
-          return [date, totalSugar, color, totalSugar.toFixed(1)];
+          return [date, totalSugar, color, totalSugar.toFixed(1), userDSIG, 'stroke-color: red; stroke-width: 2; stroke-dasharray: 5,5'];
         });
 
         chartData.addRows(sugarByDate);
@@ -74,10 +76,7 @@
             ticks: [
               { v: 0, f: '0' },
               { v: userDSIG, f: '每日建議糖攝取上限 (' + userDSIG + 'g)' }
-            ],
-            gridlineColor: (value) => value === userDSIG ? 'red' : '#ddd', // 紅色線
-            gridlineStyle: (value) => value === userDSIG ? '10,5' : 'solid', // 虛線 (10px 實線, 5px 間隙)
-            gridlineWidth: (value) => value === userDSIG ? 2 : 1 // 更粗的線
+            ]
           },
           vAxis: { 
             title: 'Date',
@@ -92,6 +91,9 @@
               fontSize: 12,
               color: '#000'
             }
+          },
+          series: {
+            1: { type: 'line', lineDashStyle: [5, 5], lineWidth: 2, visibleInLegend: false } // DSIG 線為虛線
           }
         };
 
