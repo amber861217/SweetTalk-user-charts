@@ -18,45 +18,49 @@
       }
 
       function drawCharts(userData) {
-        // 準備單一長條圖資料
+        // 準備水平長條圖資料
         const dates = [...new Set(userData.map(row => row.Date))].sort();
         const categories = ['甜點', '鹹點', '飲料', '原型食物'];
         const userDSIG = userData.length > 0 ? parseFloat(userData[0].UserDSIG) : 0;
 
-        // 單一長條圖資料表
+        // 水平長條圖資料表
         const chartData = new google.visualization.DataTable();
         chartData.addColumn('string', 'Date');
         chartData.addColumn('number', 'Sugar (grams)');
-        chartData.addColumn({ type: 'string', role: 'style' }); // 添加 style 欄位用於條件式顏色
+        chartData.addColumn({ type: 'string', role: 'style' }); // 條件式顏色
         chartData.addColumn({ type: 'string', role: 'annotation' }); // 總和註解
 
         const sugarByDate = dates.map(date => {
           const totalSugar = userData
             .filter(d => d.Date === date)
             .reduce((sum, d) => sum + parseFloat(d.Sugar || 0), 0);
-          const color = totalSugar <= userDSIG ? '#2894FF' : '#FFA042'; // 根據 DSIG 比較設置顏色
-          return [date, totalSugar, color, totalSugar.toFixed(1)]; // 總和作為註解
+          const color = totalSugar <= userDSIG ? '#2894FF' : '#FFA042';
+          return [date, totalSugar, color, totalSugar.toFixed(1)];
         });
 
         chartData.addRows(sugarByDate);
 
-        // 單一長條圖選項
+        // 水平長條圖選項
         const chartOptions = {
           title: '每日含糖量攝取（總量）',
           titleTextStyle: {
             fontSize: 18,
             bold: true
           },
-          hAxis: { title: 'Date' },
-          vAxis: { 
+          hAxis: { 
             title: 'Sugar (grams)',
             titleTextStyle: { fontSize: 14 },
-            viewWindow: { min: 0 },
-            baseline: userDSIG, // 設置 User DSIG 常數線
+            viewWindow: { min: 0 }, // 確保從 0 開始
+            baseline: userDSIG, // 設置 User DSIG 線
             baselineColor: 'red',
-            annotations: {
-              textStyle: { color: 'red', fontSize: 12 }
-            }
+            // 添加 User DSIG 註解
+            ticks: [
+              { v: userDSIG, f: '每日建議糖攝取上限 (' + userDSIG + 'g)' }
+            ]
+          },
+          vAxis: { 
+            title: 'Date',
+            titleTextStyle: { fontSize: 14 }
           },
           legend: 'none',
           width: 800,
@@ -70,8 +74,8 @@
           }
         };
 
-        // 繪製單一長條圖
-        const chart = new google.visualization.ColumnChart(document.getElementById('stacked_chart_div'));
+        // 繪製水平長條圖
+        const chart = new google.visualization.BarChart(document.getElementById('stacked_chart_div'));
         chart.draw(chartData, chartOptions);
 
         // 準備圓餅圖資料
