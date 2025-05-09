@@ -27,36 +27,25 @@
 
         userData.forEach(row => {
           const percentage = parseFloat(row.Percentage);
-          const color = percentage > 1 ? '#FF7575' : '#81C0C0';
-          const annotation = percentage.toFixed(2) + '%'; // 格式化為百分比標籤
+          const color = percentage > 1 ? 'red' : 'blue'; // 明確指定預設顏色
+          const annotation = percentage.toFixed(2); // 格式化為百分比標籤
           data.addRow([row.Date, percentage, color, annotation]);
         });
 
         const options = {
           title: '每日含糖量攝取百分比',
           titleTextStyle: {
-            fontSize: 18,
-            bold: true
+            align: 'center', // 修正為 align 屬性
+            fontSize: 18
           },
           hAxis: { title: 'Date' },
-          vAxis: { 
-            title: '含糖量百分比（%）',
-            titleTextStyle: { fontSize: 14 }
-          },
+          vAxis: { title: 'Percentage' },
           legend: 'none',
-          width: 800,
-          height: 500,
           annotations: {
             alwaysOutside: true,
             textStyle: {
-              fontSize: 14,
-              color: '#FFFFFF', // 資料標籤白色
-              auraColor: 'none' // 移除預設背景
-            },
-            boxStyle: {
-              stroke: 'none', // 移除邊框
-              rx: 3, // 輕微圓角
-              fill: (dataPoint) => dataPoint.style || '#81C0C0' // 底色與 bar 顏色一致
+              fontSize: 12,
+              color: '#000'
             }
           }
         };
