@@ -5,8 +5,24 @@
     <title>User Sugar Intake Chart</title>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <style>
+      #chart-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+      }
       #stacked_chart_div, #pie_chart_div {
+        margin: 0 auto;
         text-align: center;
+      }
+      #stacked_chart_div {
+        width: 800px;
+        height: 500px;
+      }
+      #pie_chart_div {
+        width: 500px;
+        height: 400px;
       }
     </style>
     <script>
@@ -50,17 +66,18 @@
           hAxis: { 
             title: 'Sugar (grams)',
             titleTextStyle: { fontSize: 14 },
-            viewWindow: { min: 0, max: Math.max(userDSIG + 10, ...sugarByDate.map(d => d[1] + 10)) }, // 確保 X 軸範圍足夠
+            viewWindow: { min: 0, max: Math.max(userDSIG + 10, ...sugarByDate.map(d => d[1] + 10)) },
             gridlines: {
-              count: -1, // 自動計算格線
+              count: -1,
               color: '#ddd'
             },
-            // 使用 ticks 模擬 User DSIG 紅色線和註解
             ticks: [
               { v: 0, f: '0' },
               { v: userDSIG, f: '每日建議糖攝取上限 (' + userDSIG + 'g)' }
             ],
-            gridlineColor: (value) => value === userDSIG ? 'red' : '#ddd' // 設置 User DSIG 線為紅色
+            gridlineColor: (value) => value === userDSIG ? 'red' : '#ddd', // 紅色線
+            gridlineStyle: (value) => value === userDSIG ? '10,5' : 'solid', // 虛線 (10px 實線, 5px 間隙)
+            gridlineWidth: (value) => value === userDSIG ? 2 : 1 // 更粗的線
           },
           vAxis: { 
             title: 'Date',
@@ -156,7 +173,9 @@
   </head>
   <body>
     <h2>User Sugar Intake Chart</h2>
-    <div id="stacked_chart_div" style="width: 900px; height: 500px;"></div>
-    <div id="pie_chart_div" style="width: 500px; height: 400px; margin: 0 auto;"></div>
+    <div id="chart-container">
+      <div id="stacked_chart_div"></div>
+      <div id="pie_chart_div"></div>
+    </div>
   </body>
 </html>
