@@ -18,38 +18,31 @@
       }
 
       function drawCharts(userData) {
-        // 準備多條長條圖資料
+        // 準備單一長條圖資料
         const dates = [...new Set(userData.map(row => row.Date))].sort();
         const categories = ['甜點', '鹹點', '飲料', '原型食物'];
         const userDSIG = userData.length > 0 ? parseFloat(userData[0].UserDSIG) : 0;
 
-        // 多條長條圖資料表
+        // 單一長條圖資料表
         const chartData = new google.visualization.DataTable();
         chartData.addColumn('string', 'Date');
-        categories.forEach(category => {
-          chartData.addColumn('number', category);
-        });
-        chartData.addColumn({ type: 'number', role: 'annotation' }); // 總和註解
+        chartData.addColumn('number', 'Sugar (grams)');
+        chartData.addColumn({ type: 'string', role: 'style' }); // 添加 style 欄位用於條件式顏色
+        chartData.addColumn({ type: 'string', role: 'annotation' }); // 總和註解
 
-        const sugarByDateCategory = dates.map(date => {
-          const row = [date];
-          let totalSugar = 0;
-          categories.forEach(category => {
-            const sugarSum = userData
-              .filter(d => d.Date === date && d.Category === category)
-              .reduce((sum, d) => sum + parseFloat(d.Sugar || 0), 0);
-            totalSugar += sugarSum;
-            row.push(sugarSum);
-          });
-          row.push(totalSugar); // 總和作為註解
-          return row;
+        const sugarByDate = dates.map(date => {
+          const totalSugar = userData
+            .filter(d => d.Date === date)
+            .reduce((sum, d) => sum + parseFloat(d.Sugar || 0), 0);
+          const color = totalSugar <= userDSIG ? '#2894FF' : '#FFA042'; // 根據 DSIG 比較設置顏色
+          return [date, totalSugar, color, totalSugar.toFixed(1)]; // 總和作為註解
         });
 
-        chartData.addRows(sugarByDateCategory);
+        chartData.addRows(sugarByDate);
 
-        // 多條長條圖選項
+        // 單一長條圖選項
         const chartOptions = {
-          title: '每日含糖量攝取（按類別）',
+          title: '每日含糖量攝取（總量）',
           titleTextStyle: {
             fontSize: 18,
             bold: true
@@ -65,14 +58,19 @@
               textStyle: { color: 'red', fontSize: 12 }
             }
           },
-          colors: ['#FF7575', '#81C0C0', '#FFD700', '#90EE90'], // 甜點、鹹點、飲料、原型食物
-          legend: { position: 'top' },
+          legend: 'none',
           width: 800,
           height: 500,
-          isStacked: false // 移除堆疊
+          annotations: {
+            alwaysOutside: true,
+            textStyle: {
+              fontSize: 12,
+              color: '#000'
+            }
+          }
         };
 
-        // 繪製多條長條圖
+        // 繪製單一長條圖
         const chart = new google.visualization.ColumnChart(document.getElementById('stacked_chart_div'));
         chart.draw(chartData, chartOptions);
 
